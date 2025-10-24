@@ -168,4 +168,4 @@ CREATE TABLE itemFactura (
     CONSTRAINT FK_ItemFactura_Curso FOREIGN KEY (id_curso) REFERENCES Cursos(id_curso)
 );
 
---prueba
+--prueba  
