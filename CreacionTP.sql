@@ -12,6 +12,11 @@ constraint pk_estudiante primary key (id_estudiante)
 ALTER TABLE ESTUDIANTES
 ADD anio_ingreso INT NULL;
 
+--agregamos estados (A=ACTIVO, B=DADO DE BAJA)
+ALTER TABLE ESTUDIANTES
+ADD estado char(1) null default'A'
+ALTER TABLE ESTUDIANTES
+ADD constraint chk_estado_alumno CHECK (estado in ('A','B'));
 
 CREATE table PROFESORES( --referente
 id_profesor int not null,
@@ -162,7 +167,7 @@ id_estudiante int not null,
 fecha date not null,
 concepto varchar(100) not null,
 monto decimal(6,2) not null,
-constraint chk_monto_cuenta_corriente check(monto > 0),
+constraint chk_monto_cuenta_corriente check(monto > 0), --PUEDE SER NEGATIVO Y ESTAR EN DEUDA?
 id_estado_pago int not null, 
 constraint fk_cuentacorriente_estado_pago foreign key (id_estado_pago) references ESTADOS_PAGO(id_estado_pago),
 
