@@ -123,9 +123,39 @@ END
 go;
 --3.Crear un procedimiento que permita volver a dar de alta a un alumno
 CREATE PROCEDURE darAlta
---4.Crear un procedimiento que permita matricular un alumno a un año. Solo se acepta una matricula por año por alumno. 
---El procedimiento además de validar los datos ingresados debe generar la factura correspondiente y el cargo en la cuenta corriente.
+@id int
+AS
+BEGIN
+	UPDATE ESTUDIANTES
+	SET estado = 'A'
+	WHERE @id = id_estudiante
+	
+END
+--4.Crear un procedimiento que permita matricular un alumno a un 
+--año. Solo se acepta una matricula por año por alumno. 
+--El procedimiento además de validar los datos ingresados 
+--debe generar la factura correspondiente y el cargo 
+--en la cuenta corriente.
 CREATE PROCEDURE matricularAlumno
+@id_alumno int,
+@anio_a_matricular int
+AS
+BEGIN
+	if exists(select * from ESTUDIANTES where @id_alumno = ID_ESTUDIANTE and estado = 'A')
+	BEGIN
+		if exists( --si ya esta matriculado para ese año
+		select *
+		from matriculacion
+		where @id_alumno = id_estudiante and @anio_a_matricular = anio)
+
+		print('El alumno ya esta matriculado para el año ingresado')
+	END
+	ELSE
+		BEGIN
+			INSERT INTO MATRICULACION(id_matricula,id_estudiante,anio,fecha_pago,monto,id_estado_pago)
+			VALUES()
+		END
+END
 --5.Crear un procedimiento que permita inscribir a un alumno a un curso. Además de verificar los datos ingresados
 --debe verificar que el alumno no encuentre inscripto es ese u otro curso de la misma materia en ese cuatrimestre.
 CREATE PROCEDURE inscribirAlumno
