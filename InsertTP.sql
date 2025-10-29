@@ -230,3 +230,6 @@ VALUES
 (914, 'Curso Programación 2 Noche','Nocturno',2025, 3333, 508,2),
 (915, 'Curso Programación 3','Avanzado',2025, 6666, 509,2),
 (916, 'Curso Programación 3 Noche', 'Nocturno',2025, 1111, 506,1)
+
+
+--Inscripciones a cursos
