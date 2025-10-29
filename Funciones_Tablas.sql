@@ -64,6 +64,7 @@ return (select m.id_materia, m.nombre_materia,
 
 -- 6. Obtener todas las facturas emitidas en un mes específico. 
 
+
 -- 7. Listar los cursos con más de 30 estudiantes inscriptos. 
 -- 8. Mostrar los movimientos de cuenta corriente de un estudiante. 
 -- 9. Listar los cursos dictados por un profesor en un año específico. 
