@@ -61,11 +61,74 @@ return (select m.id_materia, m.nombre_materia,
 	group by m.id_materia, m.nombre_materia
 	having count (c.id_curso) > 3
 	)
+-- 5. Listar los estudiantes con matrícula activa en un año determinado. 
+create function dbo.EstudiantesMatriculadosAño(@anio int)
+returns table
+as 
+return (select e.id_estudiante, e.nombre
+	from ESTUDIANTES e
+	join matriculacion m on e.id_estudiante = m.id_estudiante
+	where m.anio=@anio
+	group by e.id_estudiante, e.nombre
+	)
 
 -- 6. Obtener todas las facturas emitidas en un mes específico. 
-
+create function dbo.FacturasPorMes (@anio int, @mes int)
+returns table
+as 
+return(select * from factura
+	where year (fecha_emision) = @anio and month (fecha_emision) = @mes
+	)
 
 -- 7. Listar los cursos con más de 30 estudiantes inscriptos. 
+
+create function dbo.CursosEstudiantesInscriptos ()
+returns table
+as
+return (select c.id_curso, c.nombre_curso, count (i.id_estudiante) as cantidad_inscriptos
+	from CURSOS c
+	join INSCRIPCIONES i on c.id_curso = i.id_curso
+	group by c.id_curso, c.nombre_curso
+	having count (i.id_estudiante) > 30
+	)
+
 -- 8. Mostrar los movimientos de cuenta corriente de un estudiante. 
+create function dbo.MovimientosCuentaCorrienteEstudiante (@id_estudiante int)
+returns table
+as
+return (select cc.id_movimiento, cc.fecha, cc.concepto, cc.monto, ep.nombre_esatdo as esatdo_pago
+
+	from CUENTACORRIENTE cc
+	join ESTADOS_PAGO ep on cc.id_estado_pago = ep.id_estado_pago
+	where cc.id_estudiante =@id_estudiante
+	)
+------------------------------
+alter function dbo.MovimientosCuentaCorrienteEstudiante (@id_estudiante int)
+returns table
+as
+return (select cc.id_movimiento, cc.fecha, cc.concepto, cc.monto, ep.nombre_estado as esatdo_pago
+
+	from CUENTACORRIENTE cc
+	join ESTADOS_PAGO ep on cc.id_estado_pago = ep.id_estado_pago
+	where cc.id_estudiante =@id_estudiante
+	)
+
 -- 9. Listar los cursos dictados por un profesor en un año específico. 
+
+create function dbo.Cursos_Profesor_Año (@id_profesor int, @anio int)
+returns table
+as
+return (select id_curso, nombre_curso, descripcion, anio
+	from CURSOS
+	where id_profesor=@id_profesor
+	and anio = @anio)
+
 -- 10. Obtener todas las inscripciones con nota final mayor a 8. 
+
+create function dbo.InscripcionesConNotaFinal()
+returns table
+as
+return (select * 
+	from INSCRIPCIONES
+	where nota_final > 8
+	)
