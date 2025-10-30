@@ -156,7 +156,7 @@ BEGIN
 			VALUES()
 		END
 END
---5.Crear un procedimiento que permita inscribir a un alumno a un curso. Además de verificar los datos ingresados
+--5.Crear un procedimiento que permita inscribir a un alumno a un curso. Además de verificar los datos ingresados 
 --debe verificar que el alumno no encuentre inscripto es ese u otro curso de la misma materia en ese cuatrimestre.
 CREATE PROCEDURE inscribirAlumno
 --6.Crear un procedimiento de le permita cargar nota a un alumno, debe recibir el curso, el alumno, el examen 
