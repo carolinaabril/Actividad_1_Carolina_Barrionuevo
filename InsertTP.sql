@@ -184,7 +184,10 @@ INSERT INTO INTERESPORMORA(anio_carrera, porcentaje_interes)
 VALUES
 (1,2.5),
 (2,2.0),
-(3,1.5);
+(3,1.5),
+(4,2.0),
+(5,1.5),
+(6,2.0);
 
 --FUNCIONES CON TABLAS
 --modificaciones
