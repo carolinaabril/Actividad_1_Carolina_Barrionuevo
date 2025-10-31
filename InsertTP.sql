@@ -231,5 +231,29 @@ VALUES
 (915, 'Curso Programación 3','Avanzado',2025, 6666, 509,2),
 (916, 'Curso Programación 3 Noche', 'Nocturno',2025, 1111, 506,1)
 
+--Nuevos estudiantes
+insert into ESTUDIANTES(id_estudiante,nombre,apellido,email)
+values
+(700,'Valentina','Rojas','valentina@example.com'),
+(800,	'Tomas',	'Fernandez',	'tomas@example.com'),
+(900,	'Julieta',	'Castro',	'julieta@example.com'),
+(1000,	'Camila',	'Lopez',	'camila@example.com'),
+(1100,	'Franco',	'Herrera',	'franco@example.com'),
+(1200,	'Lucia',	'Alvarez',	'lucia@example.com');
 
---Inscripciones a cursos
+--Inscripciones de nuevos estudiantes 
+insert into INSCRIPCIONES(id_estudiante,id_curso,fecha_inscripcion,nota_teorica_1,nota_practica)
+values
+(700,906,'2025-06-12',8,8),
+(800,907,'2024-05-13',6,8),
+(900,908,'2025-07-14',10,10),
+(1000,909, '2023-10-01', 8, 9), 
+(1100,910,'2025-07-14',10,8),
+(1200,911, '2023-10-01', 8, 9)
+
+
+--Eliminar cursos de mas 
+-- delete  from CURSOS
+-- where id_curso in (912, 913,914,915,916)
+
+
