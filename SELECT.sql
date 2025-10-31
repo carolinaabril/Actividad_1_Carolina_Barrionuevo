@@ -60,6 +60,10 @@ exec FiltrarIscripciones
 exec CursosXInscriptos
 	@campos_agrupacion='id_materia',
 	@min_inscriptos=5
+--4. 
+exec ReporteFacturasAgrupacion @campo= 'id_estado_pago'
+
+--5. 
 
 
 --TRIGGERS
