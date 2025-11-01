@@ -260,3 +260,24 @@ values
 -- where id_curso in (912, 913,914,915,916)
 
 
+-- Agregar costo y creditos a CURSOS
+alter table CURSOS
+add creditos int not null default 0,
+	costo_mensual decimal (10,2) not null default 0.00
+
+update CURSOS
+set creditos=7,
+	costo_mensual= 15000
+where id_curso in (908,9002,9004)
+
+update CURSOS
+set creditos=6,
+	costo_mensual= 10000
+where id_curso in (9001,907,910)
+
+update CURSOS
+set creditos=9,
+	costo_mensual= 20000
+where id_curso in (909,906,9003)
+
+
