@@ -60,10 +60,24 @@ exec FiltrarIscripciones
 exec CursosXInscriptos
 	@campos_agrupacion='id_materia',
 	@min_inscriptos=5
---4. 
+-- 4. 
 exec ReporteFacturasAgrupacion @campo= 'id_estado_pago'
 
---5. 
+-- 5. 
+exec ListarCuotasVencidas @campo_orden = 'fecha_vencimiento'
+
+-- 6. 
+exec CursosCondicionDinamica
+	@campo = 'creditos',
+	@operador = '>',
+	@valor = 7
+
+EXEC CursosCondicionDinamica 
+    @campo = 'costo_mensual', 
+    @operador = '>', 
+    @valor = 12000
+
+
 
 
 --TRIGGERS
