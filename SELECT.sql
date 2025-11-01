@@ -77,7 +77,29 @@ EXEC CursosCondicionDinamica
     @operador = '>', 
     @valor = 12000
 
+-- 7. 
+exec CursosProfesoresXCuatrimestre
+	@id_cuatrimestre = 2,
+	@campo_orden = 'nombre'
 
+exec CursosProfesoresXCuatrimestre
+	@id_cuatrimestre = 1,
+	@campo_orden = 'apellido'
+
+-- 8. 
+exec MovimientosPorConceptos @conceptos = 'matrícula,cuota,interés'
+
+-- 9. 
+exec InscripcionesPorColumnas
+	@columnas = 'nota_teorica_1,nota_practica,nota_final'
+
+-- 10.
+
+exec ListadoEstudiantesFiltros 
+	@condiciones = 'id_estudiante=700'
+
+exec ListadoEstudiantesFiltros
+	@condiciones = 'anio_ingreso > 2022 and apellido like ''%Blanco%'''
 
 
 --TRIGGERS
