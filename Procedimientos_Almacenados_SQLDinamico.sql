@@ -104,8 +104,117 @@ begin
 end
 
 -- 5.	Listar cuotas vencidas ordenadas por un campo dinámico (fecha_vencimiento, monto, estado_pago). 
+
+alter procedure ListarCuotasVencidas
+	@campo_orden nvarchar (50)
+
+as
+begin
+	declare @sql nvarchar(max)
+
+	set @sql = ' 
+		select c.id_cuota, c.id_estudiante, c.id_factura, f.fecha_vencimiento, f.monto_total, f.id_estado_pago
+		from cuota c
+		join factura f on c.id_factura = f.id_factura
+		where f.fecha_vencimiento < getdate()
+		order by ' + QUOTENAME (@campo_orden)
+
+	exec sp_executesql @sql
+end
+
+
 -- 6.	Mostrar los cursos que cumplen con una condición dinámica (por ejemplo, costo mensual > X, créditos < Y, año = Z). 
+
+create procedure CursosCondicionDinamica
+	@campo nvarchar(50),
+	@operador nvarchar (2),
+	@valor numeric (10,2)
+
+as
+begin
+	declare @sql nvarchar(max)
+
+	set @sql = '
+	select id_curso, nombre_curso, anio, creditos, id_profesor, id_materia
+	from CURSOS
+	where ' + QUOTENAME(@campo) + ' ' + @operador + ' @valor_param'
+
+
+	exec sp_executesql @sql,
+		N'@valor_param int',
+		@valor_param = @valor
+end 
 -- 7.	Listar profesores que dictan cursos en un cuatrimestre específico, con posibilidad de ordenar por nombre, apellido o especialidad. 
+
+alter procedure CursosProfesoresXCuatrimestre
+	@id_cuatrimestre int,
+	@campo_orden nvarchar(50)
+
+as
+begin
+	declare @sql nvarchar (max)
+	set @sql = '
+		select distinct p.id_profesor, p.nombre, p.apellido, p.especialidad
+		from PROFESORES p
+		join CURSOS c on p.id_profesor=c.id_profesor
+		where c.id_cuatrimestre = @cuatrimestre_param
+		order by ' + QUOTENAME(@campo_orden)
+
+	exec sp_executesql @sql,
+		N'@cuatrimestre_param int',
+		@cuatrimestre_param =@id_cuatrimestre
+
+end
+
 -- 8.	Consultar movimientos de cuenta corriente filtrando por múltiples conceptos seleccionados por el usuario (por ejemplo, 'matrícula', 'cuota', 'interés'). 
+
+alter procedure MovimientosPorConceptos
+	@conceptos nvarchar(max) -- ['matricula, cuota, interes']
+as
+begin
+	declare @listaConceptos nvarchar(max)
+	declare @sql nvarchar(max)
+
+	select @listaConceptos = STRING_AGG('''' + trim(value) + '''', ',')
+	from STRING_SPLIT (@conceptos, ',') 
+
+	set @sql = '
+		select cc.id_movimiento, cc.id_estudiante, cc.fecha, cc.concepto, cc.monto, cc.id_estado_pago
+		from CUENTACORRIENTE cc
+		where cc.concepto in (' + @listaConceptos + ')'
+
+	exec (@sql)
+end
+
 -- 9.	Listar inscripciones donde el usuario define qué columnas mostrar (por ejemplo, nota_final, nota_teorica_1, nota_practica). 
+
+alter procedure InscripcionesPorColumnas
+	@columnas nvarchar(max) 
+as
+begin
+	declare @sql nvarchar(max)
+
+	set @sql = ' 
+		select id_curso, id_estudiante, ' + @columnas + '
+		from INSCRIPCIONES'
+	exec (@sql)
+end
 -- 10.	Generar un listado de estudiantes con filtros dinámicos combinados (por ejemplo, año_ingreso > X AND apellido LIKE '%Y%'). 
+
+create procedure ListadoEstudiantesFiltros
+	@condiciones nvarchar(max)
+as
+begin
+	declare @sql nvarchar(max)
+
+	set @sql = '
+		select id_estudiante, nombre, apellido, email, anio_ingreso
+		from ESTUDIANTES
+		where ' + @condiciones
+		
+	exec (@sql)
+end
+
+
+
+
