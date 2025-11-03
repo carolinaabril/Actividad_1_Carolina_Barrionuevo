@@ -393,12 +393,6 @@ GO
 
 
 
-/* =============================================================
-   ==== PARCHE: Complementos y ajustes de Transacciones (nivel TP)
-   - Agrega ITEMFACTURA al facturar (matrícula y cuotas)
-   - Proc para generar cuotas por todo el CUATRIMESTRE actual
-   - Proc para marcar FACTURA/CUOTA vencidas
-============================================================= */
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
