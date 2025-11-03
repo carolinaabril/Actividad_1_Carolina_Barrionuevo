@@ -390,3 +390,201 @@ BEGIN
   END CATCH
 END
 GO
+
+
+
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+/* Utilidad: cuatrimestre actual */
+CREATE OR ALTER FUNCTION dbo._CuatrimestreActual()
+RETURNS INT
+AS
+BEGIN
+  DECLARE @hoy DATE = CAST(GETDATE() AS DATE);
+  RETURN (
+    SELECT TOP 1 id_cuatrimestre
+    FROM CUATRIMESTRE
+    WHERE @hoy BETWEEN fecha_inicio AND fecha_fin
+    ORDER BY fecha_inicio
+  );
+END
+GO
+
+/* 4) matricularAlumno_TX (actualizado): agrega ITEMFACTURA */
+CREATE OR ALTER PROCEDURE matricularAlumno_TX
+  @id_alumno INT,
+  @anio_a_matricular INT,
+  @id_estado_pago INT = 1
+AS
+BEGIN
+  SET NOCOUNT ON;
+  DECLARE @fecha DATE = CAST(GETDATE() AS DATE);
+  DECLARE @monto DECIMAL(10,2) = 9500.00;
+  DECLARE @id_mat INT, @id_fact INT, @mes INT, @fecha_venc DATE, @id_mov INT;
+
+  BEGIN TRY
+    BEGIN TRAN;
+
+    IF NOT EXISTS (SELECT 1 FROM ESTUDIANTES WHERE id_estudiante=@id_alumno AND estado='A')
+    BEGIN RAISERROR('El alumno no existe o no está activo.',16,1); ROLLBACK; RETURN; END
+
+    IF EXISTS (SELECT 1 FROM MATRICULACION WHERE id_estudiante=@id_alumno AND anio=@anio_a_matricular)
+    BEGIN RAISERROR('El alumno ya está matriculado en ese año.',16,1); ROLLBACK; RETURN; END
+
+    SELECT @id_mat = ISNULL(MAX(id_matricula),0)+1 FROM MATRICULACION;
+    SELECT @id_fact = ISNULL(MAX(id_factura),0)+1 FROM FACTURA;
+    SELECT @id_mov = ISNULL(MAX(id_movimiento),0)+1 FROM CUENTACORRIENTE;
+
+    SET @mes = MONTH(@fecha);
+    SET @fecha_venc = DATEADD(MONTH,3,@fecha);
+
+    INSERT INTO MATRICULACION(id_matricula,id_estudiante,anio,fecha_pago,monto,id_estado_pago)
+    VALUES(@id_mat,@id_alumno,@anio_a_matricular,@fecha,@monto,@id_estado_pago);
+
+    INSERT INTO FACTURA(id_factura,id_estudiante,mes,anio,fecha_emision,fecha_vencimiento,monto_total,id_estado_pago)
+    VALUES(@id_fact,@id_alumno,@mes,@anio_a_matricular,@fecha,@fecha_venc,@monto,@id_estado_pago);
+
+    /* Item de factura por matrícula (sin curso) */
+    INSERT INTO ITEMFACTURA(id_factura,id_curso) VALUES(@id_fact, NULL);
+
+    INSERT INTO CUENTACORRIENTE(id_movimiento,id_estudiante,fecha,concepto,monto,id_estado_pago)
+    VALUES(@id_mov,@id_alumno,@fecha,'Matricula',@monto,@id_estado_pago);
+
+    COMMIT;
+    PRINT 'Matrícula, factura, item y CC generados.';
+  END TRY
+  BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK;
+    RAISERROR('Error en matricularAlumno_TX: %s',16,1,ERROR_MESSAGE());
+  END CATCH
+END
+GO
+
+/* 7) generarCuotasAlumnos_TX (actualizado): agrega ITEMFACTURA por curso */
+CREATE OR ALTER PROCEDURE generarCuotasAlumnos_TX
+  @anio INT,
+  @mes_facturacion INT,
+  @id_estado_pago INT = 1
+AS
+BEGIN
+  SET NOCOUNT ON;
+  IF @mes_facturacion NOT BETWEEN 1 AND 12
+  BEGIN RAISERROR('Mes inválido (1-12).',16,1); RETURN; END
+
+  DECLARE @hoy DATE = GETDATE();
+  DECLARE @id_cuat INT = (SELECT TOP 1 id_cuatrimestre FROM CUATRIMESTRE WHERE @hoy BETWEEN fecha_inicio AND fecha_fin ORDER BY fecha_inicio);
+  IF @id_cuat IS NULL BEGIN RAISERROR('No hay cuatrimestre actual definido.',16,1); RETURN; END
+
+  DECLARE @id_est INT;
+  DECLARE cur CURSOR FOR
+    SELECT DISTINCT e.id_estudiante
+    FROM ESTUDIANTES e
+    JOIN INSCRIPCIONES i ON i.id_estudiante=e.id_estudiante
+    JOIN CURSOS c ON c.id_curso=i.id_curso
+    WHERE e.estado='A' AND c.id_cuatrimestre=@id_cuat AND c.anio=@anio;
+
+  OPEN cur; FETCH NEXT FROM cur INTO @id_est;
+  WHILE @@FETCH_STATUS = 0
+  BEGIN
+    BEGIN TRY
+      BEGIN TRAN;
+
+      IF NOT EXISTS (SELECT 1 FROM CUOTA WHERE id_estudiante=@id_est AND mes=@mes_facturacion AND id_cuatrimestre=@id_cuat)
+      BEGIN
+        DECLARE @nuevo_id_cuota INT = (SELECT ISNULL(MAX(id_cuota),0)+1 FROM CUOTA);
+        DECLARE @nuevo_id_fact INT = (SELECT ISNULL(MAX(id_factura),0)+1 FROM FACTURA);
+        DECLARE @nuevo_id_mov  INT = (SELECT ISNULL(MAX(id_movimiento),0)+1 FROM CUENTACORRIENTE);
+
+        DECLARE @monto DECIMAL(10,2) =
+          (SELECT ISNULL(SUM(c.costo_mensual),0)
+           FROM INSCRIPCIONES i
+           JOIN CURSOS c ON c.id_curso=i.id_curso
+           WHERE i.id_estudiante=@id_est AND c.id_cuatrimestre=@id_cuat AND c.anio=@anio);
+
+        DECLARE @fec_emision DATE = DATEFROMPARTS(@anio,@mes_facturacion,1);
+        DECLARE @fec_venc DATE = DATEADD(DAY,15,@fec_emision);
+
+        INSERT INTO FACTURA(id_factura,id_estudiante,mes,anio,fecha_emision,fecha_vencimiento,monto_total,id_estado_pago)
+        VALUES(@nuevo_id_fact,@id_est,@mes_facturacion,@anio,@fec_emision,@fec_venc,@monto,@id_estado_pago);
+
+        /* ITEMFACTURA: un ítem por cada curso inscripto */
+        INSERT INTO ITEMFACTURA(id_factura,id_curso)
+        SELECT @nuevo_id_fact, c.id_curso
+        FROM INSCRIPCIONES i
+        JOIN CURSOS c ON c.id_curso=i.id_curso
+        WHERE i.id_estudiante=@id_est AND c.id_cuatrimestre=@id_cuat AND c.anio=@anio;
+
+        INSERT INTO CUOTA(id_cuota,id_estudiante,id_cuatrimestre,id_factura,mes,monto,fecha_vencimiento,id_estado_pago)
+        VALUES(@nuevo_id_cuota,@id_est,@id_cuat,@nuevo_id_fact,@mes_facturacion,@monto,@fec_venc,@id_estado_pago);
+
+        INSERT INTO CUENTACORRIENTE(id_movimiento,id_estudiante,fecha,concepto,monto,id_estado_pago)
+        VALUES(@nuevo_id_mov,@id_est,@fec_emision,CONCAT('Cuota ',RIGHT('00'+CAST(@mes_facturacion AS VARCHAR(2)),2),'/',@anio),@monto,@id_estado_pago);
+      END
+
+      COMMIT;
+    END TRY
+    BEGIN CATCH
+      IF @@TRANCOUNT > 0 ROLLBACK;
+      PRINT 'Error en generarCuotasAlumnos_TX para id_estudiante=' + CAST(@id_est AS VARCHAR(20)) + ': ' + ERROR_MESSAGE();
+    END CATCH;
+
+    FETCH NEXT FROM cur INTO @id_est;
+  END
+  CLOSE cur; DEALLOCATE cur;
+END
+GO
+
+/* NUEVO) generarCuotasAlumnosCuatrimestre_TX: ejecuta mes a mes del cuatri actual */
+CREATE OR ALTER PROCEDURE generarCuotasAlumnosCuatrimestre_TX
+  @anio INT,
+  @id_estado_pago INT = 1
+AS
+BEGIN
+  SET NOCOUNT ON;
+  DECLARE @id_cuat INT = dbo._CuatrimestreActual();
+  IF @id_cuat IS NULL BEGIN RAISERROR('No hay cuatrimestre actual.',16,1); RETURN; END
+
+  DECLARE @ini DATE, @fin DATE;
+  SELECT @ini=fecha_inicio, @fin=fecha_fin FROM CUATRIMESTRE WHERE id_cuatrimestre=@id_cuat;
+
+  DECLARE @mes INT = MONTH(@ini), @mes_fin INT = MONTH(@fin);
+  WHILE @mes <= @mes_fin
+  BEGIN
+    EXEC generarCuotasAlumnos_TX @anio=@anio, @mes_facturacion=@mes, @id_estado_pago=@id_estado_pago;
+    SET @mes = @mes + 1;
+  END
+END
+GO
+
+/* NUEVO) marcarVencidas_TX: pasa a 3 las PENDIENTES vencidas */
+CREATE OR ALTER PROCEDURE marcarVencidas_TX
+AS
+BEGIN
+  SET NOCOUNT ON;
+  BEGIN TRY
+    BEGIN TRAN;
+
+    UPDATE f
+      SET f.id_estado_pago = 3
+    FROM FACTURA f
+    WHERE f.id_estado_pago = 1
+      AND f.fecha_vencimiento < CAST(GETDATE() AS DATE);
+
+    UPDATE c
+      SET c.id_estado_pago = 3
+    FROM CUOTA c
+    JOIN FACTURA f ON f.id_factura=c.id_factura
+    WHERE c.id_estado_pago = 1
+      AND f.fecha_vencimiento < CAST(GETDATE() AS DATE);
+
+    COMMIT;
+    PRINT 'Facturas y cuotas vencidas marcadas.';
+  END TRY
+  BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK;
+    RAISERROR('Error en marcarVencidas_TX: %s',16,1,ERROR_MESSAGE());
+  END CATCH
+END
+GO
