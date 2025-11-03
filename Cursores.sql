@@ -1,8 +1,6 @@
--- ===========================================
--- CURSORES (LISTADOS)
--- ===========================================
+-- Cursores
 
-/* 1) listar todos los estudiantes y sus notas finales por curso */
+--1) listar todos los estudiantes y sus notas finales por curso */
 IF OBJECT_ID('dbo.sp_EstudiantesNotasFinalesPorCurso') IS NOT NULL
   DROP PROCEDURE dbo.sp_EstudiantesNotasFinalesPorCurso;
 GO
