@@ -76,21 +76,18 @@ values
 
 (100,	9001,	'2023-05-10',	7,	9),
 (100, 	9002,	'2024-06-20',	9,	8),
-(200,	9001,	'2023-07-01',	5,	6),
+(200,	9001,	'2023-07-01',	2,	6),
 (200,	9003,	'2025-03-12',	8,	9),
-(300,	9002,	'2024-04-15',	4,	6),
+(300,	9002,	'2024-04-15',	3,	6),
 (300,	9004,	'2025-01-10',	9,	10),
 (400,	9003,	'2025-02-01',	6,	7),
 (400,	9004,	'2025-02-15',	3,	5),
 (500,	9005,	'2025-07-01',	2,	4),
-(500,	9004,	'2025-07-10',	10,	10);
-
-insert into INSCRIPCIONES(id_estudiante,id_curso,fecha_inscripcion,nota_teorica_1,nota_practica)
-values
-(600,9004,'2025-06-12',10,10),
-(100,9004,'2024-05-13',10,10),
-(200,9004,'2025-07-14',10,10),
-(400,9005, '2023-10-01', 8, 9); 
+(500,	9004,	'2025-07-10',	10,	10),
+(600,	9004,	'2025-06-12',	10,	10),
+(100,	9004,	'2024-05-13',	10,	10),
+(200,	9004,	'2025-07-14',	10,	10),
+(400,	9005,	'2023-10-01',	8,	9); 
 
 --modificaciones a inscripciones
 
@@ -142,13 +139,13 @@ UPDATE INSCRIPCIONES
 SET nota_final = (nota_teorica_1 + nota_teorica_2 + nota_practica + nota_teorica_recuperatorio) / 4.0
 WHERE nota_teorica_recuperatorio IS NOT NULL;
 
---TODAVIA NO INSERTE TODO ESTO!!!!!!
+
 --nuevas tablas
 INSERT INTO CUATRIMESTRE(id_cuatrimestre, nombre, fecha_inicio, fecha_fin)
 VALUES 
 (1,'Cuatrimestre 1 2025','2025-03-01','2025-06-30'),
-(2,'Cuatrimestre 2 2025','2025-07-01','2025-10-31');
-
+(2,'Cuatrimestre 2 2025','2025-07-01','2025-12-14');
+--TODAVIA NO INSERTE TODO ESTO!!!!!!
 INSERT INTO MATRICULACION(id_matricula, id_estudiante, anio, fecha_pago, monto, id_estado_pago)
 VALUES
 (1,100,2025,'2025-03-01',5000,2),
@@ -164,7 +161,7 @@ VALUES
 -- cuotas
 INSERT INTO CUOTA(id_cuota, id_estudiante, id_cuatrimestre, id_factura, mes, monto, fecha_vencimiento, id_estado_pago)
 VALUES
-(1,100,1,1,3,1000,'2025-03-15',1),
+(1,100,1,1,3,1000,'2025-03-15',3),
 (2,200,1,2,3,1000,'2025-03-15',1);
 
 -- item factura
@@ -176,10 +173,10 @@ VALUES
 INSERT INTO CUENTACORRIENTE(id_movimiento, id_estudiante, fecha, concepto, monto, id_estado_pago)
 VALUES
 (1,100,'2025-03-01','Matrícula',5000,2),
-(2,100,'2025-03-01','Cuota marzo',1000,1),
+(2,100,'2025-03-01','Cuota marzo',1000,3),
 (3,200,'2025-03-01','Matrícula',5000,2),
 (4,200,'2025-03-01','Cuota marzo',1000,1);
-
+ 
 INSERT INTO INTERESPORMORA(anio_carrera, porcentaje_interes)
 VALUES
 (1,2.5),
@@ -192,10 +189,7 @@ VALUES
 --FUNCIONES CON TABLAS
 --modificaciones
 
-alter table MATERIAS
-drop column id_cuatrimestre
-
-alter table CURSOS
+alter table CURSOS 
 add id_cuatrimestre int
 
 update CURSOS
@@ -208,19 +202,16 @@ where id_materia in (504,505)
 
 -------------------------------------------
 --agregado de materias
-insert into MATERIAS (id_materia,nombre_materia,creditos)
+insert into MATERIAS (id_materia,nombre_materia,creditos,costo_curso_mensual) --lo ejecute
 values
-(506,'Matematica 2',6),
-(507,'Programación 1',5),
-(508,'Programación 2',6),
-(509,'Programación 3',8)
-
---delete from CURSOS
---where id_curso in (907,908,909,910,911)
+(506,'Matematica 2',6,8000),
+(507,'Programación 1',5,600),
+(508,'Programación 2',6,7000),
+(509,'Programación 3',8,9000)
 
 --agregado de cursos
 
-INSERT INTO CURSOS (id_curso,nombre_curso,descripcion,anio, id_profesor, id_materia, id_cuatrimestre)
+INSERT INTO CURSOS (id_curso,nombre_curso,descripcion,anio, id_profesor, id_materia, id_cuatrimestre) 
 VALUES 
 
 (907, 'Curso Programación 1','Básico', 2025, 2222, 507,1),
@@ -235,7 +226,7 @@ VALUES
 (916, 'Curso Programación 3 Noche', 'Nocturno',2025, 1111, 506,1)
 
 --Nuevos estudiantes
-insert into ESTUDIANTES(id_estudiante,nombre,apellido,email)
+insert into ESTUDIANTES(id_estudiante,nombre,apellido,email) 
 values
 (700,'Valentina','Rojas','valentina@example.com'),
 (800,	'Tomas',	'Fernandez',	'tomas@example.com'),
@@ -245,7 +236,7 @@ values
 (1200,	'Lucia',	'Alvarez',	'lucia@example.com');
 
 --Inscripciones de nuevos estudiantes 
-insert into INSCRIPCIONES(id_estudiante,id_curso,fecha_inscripcion,nota_teorica_1,nota_practica)
+insert into INSCRIPCIONES(id_estudiante,id_curso,fecha_inscripcion,nota_teorica_1,nota_practica) 
 values
 (700,906,'2025-06-12',8,8),
 (800,907,'2024-05-13',6,8),
@@ -255,12 +246,12 @@ values
 (1200,911, '2023-10-01', 8, 9)
 
 
---Eliminar cursos de mas 
--- delete  from CURSOS
--- where id_curso in (912, 913,914,915,916)
+--Eliminar cursos de mas
+delete  from CURSOS
+where id_curso in (912, 913,914,915,916)
 
 
--- Agregar costo y creditos a CURSOS
+-- Agregar costo y creditos a CURSOS. 
 alter table CURSOS
 add creditos int not null default 0,
 	costo_mensual decimal (10,2) not null default 0.00
@@ -280,4 +271,5 @@ set creditos=9,
 	costo_mensual= 20000
 where id_curso in (909,906,9003)
 
-
+ALTER TABLE MATERIAS
+DROP COLUMN costo_curso_mensual

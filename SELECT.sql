@@ -1,7 +1,111 @@
 --SELECT 
 
 -- PROCEDIMIENTOS ALMACENADOS
+--1
+exec cargaAlumnos 
+	@id = 1300,
+	@nombre = 'Ignacio',
+	@apellido = 'Gutierrez',
+	@email = 'Ignacio@example.com',
+	@anio_ingreso = 2025;
 
+EXEC cargaAlumnos
+	@id = 1400, 
+	@nombre = 'Mariana', 
+	@apellido = 'Lopez', 
+	@email = 'mariana@example.com',
+	@anio_ingreso = 2025;
+
+EXEC cargaMateria --VER
+    @id = 510,
+    @nombre_materia = 'Química General',
+    @creditos = 5; 
+
+EXEC cargaProfesor
+    @id = 8888,
+    @nombre = 'Mariana',
+    @apellido = 'Torres',
+    @especialidad = 'Química';
+
+EXEC cargaCurso --VER
+    @id = 9200,
+    @nombre = 'Curso Química General',
+    @descripcion = 'Básico',
+    @anio = 2025,
+    @id_prof = 8888,
+    @id_materia = 510;
+
+EXEC cargaCuatrimestre
+    @id = 3,
+    @nombre = 'Cuatrimestre 3 2025',
+    @inicio = '2025-12-15',
+    @fin = '2026-02-28';
+
+EXEC cargaInteresPorMora
+    @anio = 7,
+    @porcentaje = 2.5;
+--2
+EXEC darBaja @ID_ESTUDIANTE = 1400;
+--3
+EXEC darAlta @id = 1400;
+--4
+EXEC matricularAlumno 
+	@id_alumno = 300, 
+	@anio_a_matricular = 2025, 
+	@monto_mat = 5000;
+--5
+EXEC matricularAlumno 
+	@id_alumno = 400, 
+	@anio_a_matricular = 2025, 
+	@monto_mat = 5000;
+--6
+EXEC inscribirAlumno 
+	@id_alumno = 600, 
+	@id_curso = 9005;
+
+EXEC inscribirAlumno 
+	@id_alumno = 100, 
+	@id_curso = 9005;
+--7
+EXEC cargarNota 
+	@id_curso = 9005, 
+	@id_alumno = 100, 
+	@examen = 'nota_teorica_1', 
+	@nota = 9;
+
+EXEC cargarNota 
+	@id_curso = 9005, 
+	@id_alumno = 100, 
+	@examen = 'nota_teorica_2', 
+	@nota = 2;
+
+EXEC cargarNota 
+	@id_curso = 9005, 
+	@id_alumno = 100, 
+	@examen = 'nota_teorica_recuperatorio', 
+	@nota = 7;
+--8
+EXEC generarCuotasAlumnos; --ver
+--9
+EXEC generarCuota 
+	@id_alumno = 500, 
+	@id_cuatri = 2, 
+	@mes = 8, 
+	@monto = 1200, 
+	@fecha_emision = '2025-08-01', 
+	@anio = 2025;
+--10
+EXEC calculoInteresPorMora; 
+
+EXEC registrarPago 
+	@id_alumno = 100, 
+	@id_factura = 1, 
+	@concepto = 'Pago Cuota Marzo';
+
+EXEC registrarPago 
+	@id_alumno = 200, 
+	@id_factura = 2, 
+	@concepto = 'Pago Cuota Marzo';
 
 -- FUNCIONES CON DEVOLUCION DE ESCALAR
 -- 1.
@@ -71,11 +175,6 @@ exec CursosCondicionDinamica
 	@campo = 'creditos',
 	@operador = '>',
 	@valor = 7
-
-EXEC CursosCondicionDinamica 
-    @campo = 'costo_mensual', 
-    @operador = '>', 
-    @valor = 12000
 
 -- 7. 
 exec CursosProfesoresXCuatrimestre

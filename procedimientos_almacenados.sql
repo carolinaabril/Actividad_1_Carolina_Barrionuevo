@@ -17,13 +17,12 @@ end;
 CREATE PROCEDURE cargaMateria
 @id int,
 @nombre_materia varchar(50),
-@creditos int,
-@costo_mensual decimal(6,2)
+@creditos int
 
 as 
 begin
-	insert into MATERIAS (id_materia,nombre_materia,creditos,costo_curso_mensual)
-	values(@id,@nombre_materia,@creditos,@costo_mensual);
+	insert into MATERIAS (id_materia,nombre_materia,creditos)
+	values(@id,@nombre_materia,@creditos);
 end
 
 CREATE PROCEDURE cargaCurso
@@ -267,13 +266,14 @@ END
 
 --7.Crear un procedimiento que permita generar las cuotas de todos los alumnos cada mes del cuatrimestre actual, 
 --generando para ello la facturación y el cargo correspondiente a la cuenta corriente.
+
 CREATE PROCEDURE generarCuotasAlumnos
 AS
 BEGIN
     DECLARE @id_alumno INT,
             @id_cuatrimestre INT,
             @mes INT,
-            @monto DECIMAL(6,2),
+            @monto DECIMAL(6,2) = 1000, -- monto fijo por alumno
             @fecha_emision DATE = GETDATE(),
             @id_cuota INT,
             @id_factura INT,
@@ -316,28 +316,28 @@ BEGIN
                 SELECT @id_factura = ISNULL(MAX(id_factura),0)+1 FROM FACTURA;
                 SELECT @id_mov = ISNULL(MAX(id_movimiento),0)+1 FROM CUENTACORRIENTE;
 
-                -- Obtener monto de la cuota del alumno (ej: suma mensual de cursos)
-                SELECT @monto = ISNULL(
-                    (SELECT SUM(costo_curso_mensual)
-                     FROM CURSOS
-                     WHERE id_curso IN (
-                         SELECT id_curso FROM INSCRIPCIONES WHERE id_estudiante = @id_alumno
-                     )), 0);
-
                 -- Fecha de vencimiento a 30 días de hoy
                 SET @fecha_venc = DATEADD(DAY,30,@fecha_emision);
 
-                -- Insertar en CUOTA
-                INSERT INTO CUOTA(id_cuota, id_estudiante, id_cuatrimestre, id_factura, mes, monto, fecha_vencimiento, id_estado_pago)
-                VALUES(@id_cuota, @id_alumno, @id_cuatrimestre, @id_factura, @mes, @monto, @fecha_venc, 1);
+                BEGIN TRY
+                    BEGIN TRAN
+                        -- Insertar FACTURA primero (para no violar FK)
+                        INSERT INTO FACTURA(id_factura, id_estudiante, mes, anio, fecha_emision, fecha_vencimiento, monto_total, id_estado_pago)
+                        VALUES(@id_factura, @id_alumno, @mes, YEAR(@fecha_emision), @fecha_emision, @fecha_venc, @monto, 1);
 
-                -- Insertar en FACTURA
-                INSERT INTO FACTURA(id_factura, id_estudiante, mes, anio, fecha_emision, fecha_vencimiento, monto_total, id_estado_pago)
-                VALUES(@id_factura, @id_alumno, @mes, YEAR(@fecha_emision), @fecha_emision, @fecha_venc, @monto, 1);
+                        -- Insertar CUOTA luego
+                        INSERT INTO CUOTA(id_cuota, id_estudiante, id_cuatrimestre, id_factura, mes, monto, fecha_vencimiento, id_estado_pago)
+                        VALUES(@id_cuota, @id_alumno, @id_cuatrimestre, @id_factura, @mes, @monto, @fecha_venc, 1);
 
-                -- Insertar en CUENTACORRIENTE
-                INSERT INTO CUENTACORRIENTE(id_movimiento, id_estudiante, fecha, concepto, monto, id_estado_pago)
-                VALUES(@id_mov, @id_alumno, @fecha_emision, 'Cuota', @monto, 1);
+                        -- Insertar en CUENTACORRIENTE
+                        INSERT INTO CUENTACORRIENTE(id_movimiento, id_estudiante, fecha, concepto, monto, id_estado_pago)
+                        VALUES(@id_mov, @id_alumno, @fecha_emision, 'Cuota', @monto, 1);
+                    COMMIT TRAN
+                END TRY
+                BEGIN CATCH
+                    ROLLBACK TRAN
+                    PRINT(ERROR_MESSAGE())
+                END CATCH
             END
 
             FETCH NEXT FROM cuatri_cursor INTO @id_cuatrimestre, @mes;
@@ -353,8 +353,10 @@ BEGIN
     DEALLOCATE alumnos_cursor;
 END
 
+
 --8.Crear un procedimiento que permita generar la cuota de un alumno determinado para un mes del cuatrimestre actual, 
 --generando para ello la facturación y el cargo correspondiente a la cuenta corriente.
+
 CREATE PROCEDURE generarCuota
 @id_alumno INT,
 @id_cuatri INT,
@@ -382,11 +384,11 @@ DECLARE @fecha_venc DATE = DATEADD(DAY,30,@fecha_emision);
 
 	BEGIN TRY
 		BEGIN TRAN
-			INSERT INTO CUOTA(id_cuota, id_estudiante, id_cuatrimestre, id_factura, mes, monto, fecha_vencimiento, id_estado_pago)
-			VALUES(@id_cuota, @id_alumno, @id_cuatri, @id_factura, @mes, @monto, @fecha_venc, 1);
-	
 			INSERT INTO FACTURA(id_factura,id_estudiante,mes,anio,fecha_emision,fecha_vencimiento,monto_total,id_estado_pago)
 			VALUES(@id_factura,@id_alumno,month(@fecha_emision),@anio,@fecha_emision,@fecha_venc,@monto,1)
+			
+			INSERT INTO CUOTA(id_cuota, id_estudiante, id_cuatrimestre, id_factura, mes, monto, fecha_vencimiento, id_estado_pago)
+			VALUES(@id_cuota, @id_alumno, @id_cuatri, @id_factura, @mes, @monto, @fecha_venc, 1);
 				
 			INSERT INTO CUENTACORRIENTE(id_movimiento,id_estudiante,fecha,concepto,monto,id_estado_pago)
 			VALUES(@id_mov,@id_alumno,@fecha_emision,'Cuota',@monto,1)
@@ -410,36 +412,47 @@ BEGIN
             @interes DECIMAL(6,2),
             @id_mov INT;
 
-	DECLARE cuotas_cursor CURSOR FOR
-	SELECT id_cuota, id_estudiante, monto,
-		   (SELECT anio_ingreso FROM ESTUDIANTES WHERE id_estudiante = c.id_estudiante) AS anio_carrera
-	FROM CUOTA c
-	WHERE id_estado_pago = 3;
+    -- Cursor para recorrer todas las cuotas pendientes (id_estado_pago = 3)
+    DECLARE cuotas_cursor CURSOR FOR
+    SELECT id_cuota, id_estudiante, monto,
+           (SELECT DATEDIFF(YEAR, anio_ingreso, GETDATE()) + 1
+            FROM ESTUDIANTES
+            WHERE id_estudiante = c.id_estudiante) AS anio_carrera
+    FROM CUOTA c
+    WHERE id_estado_pago = 3;
 
-	OPEN cuotas_cursor;
-	FETCH NEXT FROM cuotas_cursor INTO @id_cuota, @id_estudiante, @monto, @anio_carrera;
+    OPEN cuotas_cursor;
+    FETCH NEXT FROM cuotas_cursor INTO @id_cuota, @id_estudiante, @monto, @anio_carrera;
 
-	WHILE @@FETCH_STATUS = 0
-	BEGIN
-		-- calcular interes segun año
-		SELECT @interes = (@monto * porcentaje_interes / 100)
-		FROM INTERESPORMORA
-		WHERE anio_carrera = @anio_carrera;
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        -- Calcular interes según año de carrera
+        SELECT @interes = ISNULL(@monto * i.porcentaje_interes / 100, 0)
+        FROM INTERESPORMORA i
+        WHERE i.anio_carrera = @anio_carrera;
 
-		-- Nuevo ID para cuenta corriente
-		SELECT @id_mov = ISNULL(MAX(id_movimiento),0) + 1 FROM CUENTACORRIENTE;
+        -- Evitar insertar NULL en caso de que no haya porcentaje definido
+        IF @interes IS NULL
+            SET @interes = 0;
 
-		-- Insertar interés en cuenta corriente
-		INSERT INTO CUENTACORRIENTE(id_movimiento, id_estudiante, fecha, concepto, monto, id_estado_pago)
-		VALUES(@id_mov, @id_estudiante, GETDATE(), 'Interes por mora', @interes, 3);
+        -- Nuevo ID para cuenta corriente
+        SELECT @id_mov = ISNULL(MAX(id_movimiento),0) + 1 FROM CUENTACORRIENTE;
 
-		FETCH NEXT FROM cuotas_cursor INTO @id_cuota, @id_estudiante, @monto, @anio_carrera;
-	END
+        -- Insertar interés en cuenta corriente solo si es mayor a 0
+        IF @interes > 0
+        BEGIN
+            INSERT INTO CUENTACORRIENTE(id_movimiento, id_estudiante, fecha, concepto, monto, id_estado_pago)
+            VALUES(@id_mov, @id_estudiante, GETDATE(), 'Interes por mora', @interes, 3);
+        END
 
-	CLOSE cuotas_cursor;
-	DEALLOCATE cuotas_cursor;
+        FETCH NEXT FROM cuotas_cursor INTO @id_cuota, @id_estudiante, @monto, @anio_carrera;
+    END
 
+    CLOSE cuotas_cursor;
+    DEALLOCATE cuotas_cursor;
 END
+
+
 
 --10.Crear un procedimiento que permita registrar un pago a un alumno determinado.
 CREATE PROCEDURE registrarPago
