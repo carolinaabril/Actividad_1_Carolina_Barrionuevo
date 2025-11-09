@@ -145,6 +145,10 @@ INSERT INTO CUATRIMESTRE(id_cuatrimestre, nombre, fecha_inicio, fecha_fin)
 VALUES 
 (1,'Cuatrimestre 1 2025','2025-03-01','2025-06-30'),
 (2,'Cuatrimestre 2 2025','2025-07-01','2025-12-14');
+
+update CUATRIMESTRE
+set fecha_fin = '2025-12-25'
+where id_cuatrimestre = 2
 --TODAVIA NO INSERTE TODO ESTO!!!!!!
 INSERT INTO MATRICULACION(id_matricula, id_estudiante, anio, fecha_pago, monto, id_estado_pago)
 VALUES
