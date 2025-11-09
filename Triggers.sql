@@ -1,7 +1,5 @@
 
-/* =============================================================
-   Triggers_TP.sql - Nivel académico (SQL Server - T-SQL)
-============================================================= */
+--   Triggers_TP.sql 
 
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -193,3 +191,58 @@ BEGIN
   END
 END
 GO
+
+
+-- 8) Trigger para impedir 
+--la inscripción si el estudiante está dado de baja
+
+CREATE TRIGGER impedirInscripcion
+ON INSCRIPCIONES
+INSTEAD OF INSERT
+
+AS
+BEGIN
+    IF exists(SELECT *
+    from inserted i, estudiantes e
+    where e.id_estudiante = i.id_estudiante and e.estado = 'B')
+
+    BEGIN
+        RAISERROR('No se puede inscribir: el estudiante está dado de baja.', 16, 1);
+        RETURN;
+    END
+
+     INSERT INTO INSCRIPCIONES (id_estudiante,id_curso, fecha_inscripcion, nota_teorica_1, nota_teorica_2,nota_practica,nota_teorica_recuperatorio,nota_final)
+  SELECT
+    id_estudiante,
+    id_curso,
+    fecha_inscripcion,
+    nota_teorica_1,
+    nota_teorica_2,
+    nota_practica,
+    nota_teorica_recuperatorio,
+    nota_final
+  FROM inserted;
+
+END
+GO
+
+--9 Trigger para actualizar el monto total de la factura al insertar un ítem de factura.
+
+CREATE TRIGGER actualizarMontoFactura
+ON itemFactura
+AFTER insert
+AS
+BEGIN
+
+    DECLARE @id_factura INT;
+    SELECT @id_factura = id_factura FROM inserted;
+    
+    UPDATE factura
+    SET monto_total = (
+        SELECT SUM(c.costo_mensual)
+        FROM itemFactura i, cursos c
+        WHERE i.id_curso = c.id_curso
+          AND i.id_factura = @id_factura
+    )
+    WHERE id_factura = @id_factura;
+END;
