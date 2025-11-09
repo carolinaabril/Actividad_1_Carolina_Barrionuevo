@@ -1,15 +1,11 @@
-
-/* =============================================================
-   Transacciones.sql 
-============================================================= */
+-- Transacciones.sql 
 
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
-/* =============================================================
-   1) Registrar matrícula de un estudiante y generar factura y CC
-============================================================= */
+--1) Registrar matrícula de un estudiante y generar factura y CC
+
 CREATE OR ALTER PROCEDURE matricularAlumno_TX
   @id_alumno INT,
   @anio_a_matricular INT,
@@ -43,8 +39,6 @@ BEGIN
     INSERT INTO FACTURA(id_factura,id_estudiante,mes,anio,fecha_emision,fecha_vencimiento,monto_total,id_estado_pago)
     VALUES(@id_fact,@id_alumno,@mes,@anio_a_matricular,@fecha,@fecha_venc,@monto,@id_estado_pago);
 
-    /* ITEMFACTURA por matrícula (sin curso) */
-    INSERT INTO ITEMFACTURA(id_factura,id_curso) VALUES(@id_fact, NULL);
 
     INSERT INTO CUENTACORRIENTE(id_movimiento,id_estudiante,fecha,concepto,monto,id_estado_pago)
     VALUES(@id_mov,@id_alumno,@fecha,'Matricula',@monto,@id_estado_pago);
@@ -63,9 +57,7 @@ BEGIN
 END
 GO
 
-/* =============================================================
-   2) Inscribir a un estudiante en un curso y validar vacantes
-============================================================= */   
+-- 2) Inscribir a un estudiante en un curso y validar vacantes
 CREATE OR ALTER PROCEDURE inscribirAlumno_TX
   @id_estudiante INT,
   @id_curso INT
@@ -120,9 +112,7 @@ BEGIN
 END
 GO
 
-/* =============================================================
-   3) Registrar pago de cuota y actualizar factura y CC
-============================================================= */
+-- 3) Registrar pago de cuota y actualizar factura y CC
 CREATE OR ALTER PROCEDURE registrarPago_TX
   @id_estudiante INT,
   @monto DECIMAL(12,2),
@@ -217,9 +207,7 @@ BEGIN
 END
 GO
 
-/* =============================================================
-   4) Generar cuotas mensuales para todos + facturas y CC
-============================================================= */
+-- 4) Generar cuotas mensuales para todos + facturas y CC
 CREATE OR ALTER PROCEDURE generarCuotasAlumnos_TX
   @anio INT,
   @mes_facturacion INT,
@@ -294,9 +282,7 @@ BEGIN
 END
 GO
 
-/* =============================================================
-   5) Dar de baja a un estudiante si su cuenta corriente está en cero
-============================================================= */
+-- 5) Dar de baja a un estudiante si su cuenta corriente está en cero
 CREATE OR ALTER PROCEDURE darBajaAlumno_TX
   @id_estudiante INT
 AS
@@ -330,9 +316,7 @@ BEGIN
 END
 GO
 
-/* =============================================================
-   6) Registrar nota de examen y actualizar nota final si corresponde
-============================================================= */
+-- 6) Registrar nota de examen y actualizar nota final si corresponde
 CREATE OR ALTER PROCEDURE cargarNota_TX
   @id_estudiante INT,
   @id_curso INT,
@@ -396,9 +380,7 @@ BEGIN
 END
 GO
 
-/* =============================================================
-   7) Generar intereses por mora para cuotas vencidas (CC)
-============================================================= */
+--7) Generar intereses por mora para cuotas vencidas (CC)
 CREATE OR ALTER PROCEDURE calculoInteresPorMora_TX
   @anio INT
 AS
@@ -456,9 +438,7 @@ BEGIN
 END
 GO
 
-/* =============================================================
-   8) Emitir factura agrupando todas las cuotas impagas del mes
-============================================================= */
+--8) Emitir factura agrupando todas las cuotas impagas del mes
 CREATE OR ALTER PROCEDURE emitirFacturaImpagasMes_TX
   @anio INT,
   @mes INT,
@@ -525,9 +505,7 @@ BEGIN
 END
 GO
 
-/* =============================================================
-   9) Reinscribir a un estudiante dado de baja (estado='A')
-============================================================= */
+-- 9) Reinscribir a un estudiante dado de baja (estado='A')
 CREATE OR ALTER PROCEDURE reinscribirAlumno_TX
   @id_estudiante INT
 AS
@@ -555,9 +533,7 @@ BEGIN
 END
 GO
 
-/* =============================================================
-   10) Registrar inscripción y generar ítem de factura correspondiente
-============================================================= */
+-- 10) Registrar inscripción y generar ítem de factura correspondiente
 CREATE OR ALTER PROCEDURE inscribirAlumnoYItem_TX
   @id_estudiante INT,
   @id_curso INT
@@ -627,4 +603,6 @@ BEGIN
   END CATCH
 END
 GO
+
+
 
