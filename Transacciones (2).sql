@@ -54,14 +54,18 @@ BEGIN
   END TRY
   BEGIN CATCH
     IF @@TRANCOUNT > 0 ROLLBACK;
-    RAISERROR('Error en matricularAlumno_TX: %s',16,1,ERROR_MESSAGE());
+
+    DECLARE @ErrorMessage NVARCHAR (400);
+    SET @ErrorMessage = ERROR_MESSAGE();
+    
+    RAISERROR('Error en matricularAlumno_TX: %s', 16, 1, @ErrorMessage);
   END CATCH
 END
 GO
 
 /* =============================================================
    2) Inscribir a un estudiante en un curso y validar vacantes
-============================================================= */
+============================================================= */   
 CREATE OR ALTER PROCEDURE inscribirAlumno_TX
   @id_estudiante INT,
   @id_curso INT
@@ -79,14 +83,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM CURSOS WHERE id_curso=@id_curso)
     BEGIN RAISERROR('El curso no existe.',16,1); ROLLBACK; RETURN; END
 
-    /* Validación de vacantes si existe campo "cupo" */
-    IF EXISTS (
-      SELECT 1
-      FROM CURSOS c
-      WHERE c.id_curso=@id_curso AND c.cupo IS NOT NULL
-        AND c.cupo <= (SELECT COUNT(*) FROM INSCRIPCIONES WHERE id_curso=@id_curso)
-    )
-    BEGIN RAISERROR('No hay vacantes disponibles para este curso.',16,1); ROLLBACK; RETURN; END
+    /* Validación si existen vacantes disponibles  */
+    IF (SELECT COUNT (*) FROM INSCRIPCIONES WHERE id_curso=@id_curso) >= 30
+        BEGIN RAISERROR ('No hay vacantes disponibles para este curso.',16,1); ROLLBACK; RETURN; END
 
     IF EXISTS (SELECT 1 FROM INSCRIPCIONES WHERE id_estudiante=@id_estudiante AND id_curso=@id_curso)
     BEGIN RAISERROR('Ya está inscripto en este curso.',16,1); ROLLBACK; RETURN; END
@@ -112,7 +111,11 @@ BEGIN
   END TRY
   BEGIN CATCH
     IF @@TRANCOUNT > 0 ROLLBACK;
-    RAISERROR('Error en inscribirAlumno_TX: %s',16,1,ERROR_MESSAGE());
+
+    DECLARE @ErrorMessage NVARCHAR (400);
+    SET @ErrorMessage = ERROR_MESSAGE();
+
+    RAISERROR('Error en inscribirAlumno_TX: %s',16,1,@ErrorMessage);
   END CATCH
 END
 GO
@@ -205,7 +208,11 @@ BEGIN
   END TRY
   BEGIN CATCH
     IF @@TRANCOUNT > 0 ROLLBACK;
-    RAISERROR('Error en registrarPago_TX: %s',16,1,ERROR_MESSAGE());
+
+    DECLARE @ErrorMessage NVARCHAR (400);
+    SET @ErrorMessage = ERROR_MESSAGE();
+
+    RAISERROR('Error en registrarPago_TX: %s',16,1,@ErrorMessage);
   END CATCH
 END
 GO
@@ -314,7 +321,11 @@ BEGIN
   END TRY
   BEGIN CATCH
     IF @@TRANCOUNT > 0 ROLLBACK;
-    RAISERROR('Error en darBajaAlumno_TX: %s',16,1,ERROR_MESSAGE());
+
+    DECLARE @ErrorMessage NVARCHAR (400);
+    SET @ErrorMessage = ERROR_MESSAGE();
+
+    RAISERROR('Error en darBajaAlumno_TX: %s',16,1,@ErrorMessage);
   END CATCH
 END
 GO
@@ -376,7 +387,11 @@ BEGIN
   END TRY
   BEGIN CATCH
     IF @@TRANCOUNT > 0 ROLLBACK;
-    RAISERROR('Error en cargarNota_TX: %s',16,1,ERROR_MESSAGE());
+
+    DECLARE @ErrorMessage NVARCHAR (400);
+    SET @ErrorMessage = ERROR_MESSAGE();
+
+    RAISERROR('Error en cargarNota_TX: %s',16,1,@ErrorMessage);
   END CATCH
 END
 GO
@@ -433,7 +448,10 @@ BEGIN
   END TRY
   BEGIN CATCH
     IF @@TRANCOUNT > 0 ROLLBACK;
-    RAISERROR('Error en calculoInteresPorMora_TX: %s',16,1,ERROR_MESSAGE());
+
+    DECLARE @ErrorMessage NVARCHAR (400);
+    SET @ErrorMessage = ERROR_MESSAGE(); 
+    RAISERROR('Error en calculoInteresPorMora_TX: %s',16,1,@ErrorMessage);
   END CATCH
 END
 GO
@@ -528,7 +546,11 @@ BEGIN
   END TRY
   BEGIN CATCH
     IF @@TRANCOUNT > 0 ROLLBACK;
-    RAISERROR('Error en reinscribirAlumno_TX: %s',16,1,ERROR_MESSAGE());
+
+    DECLARE @ErrorMessage NVARCHAR (400);
+    SET @ErrorMessage = ERROR_MESSAGE();
+
+    RAISERROR('Error en reinscribirAlumno_TX: %s',16,1,@ErrorMessage);
   END CATCH
 END
 GO
@@ -556,13 +578,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM CURSOS WHERE id_curso=@id_curso)
     BEGIN RAISERROR('El curso no existe.',16,1); ROLLBACK; RETURN; END
 
-    IF EXISTS (
-      SELECT 1
-      FROM CURSOS c
-      WHERE c.id_curso=@id_curso AND c.cupo IS NOT NULL
-        AND c.cupo <= (SELECT COUNT(*) FROM INSCRIPCIONES WHERE id_curso=@id_curso)
-    )
-    BEGIN RAISERROR('No hay vacantes disponibles para este curso.',16,1); ROLLBACK; RETURN; END
+    ---- Validación vacantes disponibles
+    IF (SELECT COUNT (*) FROM INSCRIPCIONES WHERE id_curso=@id_curso) >= 30
+        BEGIN RAISERROR ('No hay vacantes disponibles para este curso.',16,1); ROLLBACK; RETURN; END
 
     IF NOT EXISTS (SELECT 1 FROM INSCRIPCIONES WHERE id_estudiante=@id_estudiante AND id_curso=@id_curso)
     BEGIN
@@ -601,7 +619,11 @@ BEGIN
   END TRY
   BEGIN CATCH
     IF @@TRANCOUNT > 0 ROLLBACK;
-    RAISERROR('Error en inscribirAlumnoYItem_TX: %s',16,1,ERROR_MESSAGE());
+
+    DECLARE @ErrorMessage NVARCHAR (400);
+    SET @ErrorMessage = ERROR_MESSAGE();
+
+    RAISERROR('Error en inscribirAlumnoYItem_TX: %s',16,1,@ErrorMessage);
   END CATCH
 END
 GO
