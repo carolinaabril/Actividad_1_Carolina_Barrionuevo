@@ -135,6 +135,10 @@ constraint fk_estado_pago foreign key (id_estado_pago) references ESTADOS_PAGO(i
 CONSTRAINT pk_id_factura primary key(id_factura),
 constraint fk_id_estudiante foreign key (id_estudiante) references estudiantes(id_estudiante)
 );
+---
+alter table factura 
+alter column monto_total DECIMAL (10,2);
+-----
 
 create table cuota(
 id_cuota int not null,
@@ -168,6 +172,11 @@ constraint pk_id_matricula primary key(id_matricula),
 constraint fk_id_estudiante_matricula foreign key (id_estudiante) references estudiantes(id_estudiante)
 );
 
+---
+alter table matriculacion 
+alter column monto DECIMAL (10,2);
+-----
+
 create table CUENTACORRIENTE(
 id_movimiento int not null,
 id_estudiante int not null,
@@ -181,6 +190,11 @@ constraint fk_cuentacorriente_estado_pago foreign key (id_estado_pago) reference
 CONSTRAINT pk_id_movimiento primary key(id_movimiento),
 constraint fk_id_estudiante_cuentacorriente foreign key (id_estudiante) references estudiantes(id_estudiante)
 );
+
+---
+alter table CUENTACORRIENTE 
+alter column monto DECIMAL (10,2);
+-----
 
 create table INTERESPORMORA(
 anio_carrera INT NOT NULL,
