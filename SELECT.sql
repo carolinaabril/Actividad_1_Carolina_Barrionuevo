@@ -275,8 +275,8 @@ EXEC reinscribirAlumno_TX
 
 --10. 
 EXEC inscribirAlumnoYItem_TX
-	@id_estudiante = 600,
-	@id_curso = 9003
+	@id_estudiante = 700,
+	@id_curso = 906
 
 
 

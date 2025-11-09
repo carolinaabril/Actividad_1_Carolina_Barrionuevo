@@ -198,12 +198,6 @@ END
 GO
 
 
-
-
-SELECT name, parent_class_desc, parent_id
-FROM sys.triggers
-WHERE parent_class_desc = 'OBJECT_OR_COLUMN';
-
 --9 Trigger para actualizar el monto total de la factura al insertar un ítem de factura.
 
 CREATE TRIGGER actualizarMontoFactura

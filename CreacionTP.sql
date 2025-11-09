@@ -158,6 +158,11 @@ constraint fk_id_cuatrimestre foreign key (id_cuatrimestre) references cuatrimes
 constraint fk_id_factura foreign key(id_factura) references factura(id_factura)
 );
 
+---
+alter table cuota 
+alter column monto DECIMAL (10,2);
+-----
+
 create table matriculacion(
 id_matricula int not null,
 id_estudiante int not null, 
