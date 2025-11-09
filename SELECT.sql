@@ -225,6 +225,61 @@ exec ListadoEstudiantesFiltros
 
 --TRANSACCIONES DESDE PROCEDIMIENTOS ALMACENADOS
 
+
+--1. 
+exec matricularAlumno_TX 
+	@id_alumno = 1300,
+	@anio_a_matricular = 2024,
+	@id_estado_pago  = 1
+
+--2. 
+ EXEC inscribirAlumno_TX
+	@id_estudiante = 1400,
+	@id_curso = 906
+
+--3. 
+EXEC registrarPago_TX
+	@id_estudiante =1300,
+	@monto = 15000,
+	@fecha = '09-11-2025'
+
+--4.
+EXEC generarCuotasAlumnos_TX
+	@anio = 2025,
+	@mes_facturacion = 7,
+	@id_estado_pago = 1
+--5. 
+EXEC darBajaAlumno_TX
+	@id_estudiante= 1400
+--6. 
+EXEC cargarNota_TX
+	 @id_estudiante = 1200,
+	 @id_curso = 911,
+	 @tipo_examen = 'T2',
+	 @nota = 9
+
+--7. 
+EXEC calculoInteresPorMora_TX
+	@anio = 2025
+
+--8.
+EXEC emitirFacturaImpagasMes_TX
+	@anio = 2025,
+	@mes = 11
+
+
+--9. 
+EXEC darBaja @ID_ESTUDIANTE = 600;
+EXEC reinscribirAlumno_TX
+	@id_estudiante = 600
+
+--10. 
+EXEC inscribirAlumnoYItem_TX
+	@id_estudiante = 600,
+	@id_curso = 9003
+
+
+
 SELECT * FROM ESTUDIANTES;
 SELECT * FROM profesores;
 SELECT * FROM MATERIAS; 
