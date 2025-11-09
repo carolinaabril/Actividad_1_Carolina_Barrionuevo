@@ -150,7 +150,26 @@ select * from dbo.InscripcionesConNotaFinal ()
 
 
 -- CURSORES CON PROCEDIMIENTOS ALMACENADOS (listados)
-
+--1
+EXEC dbo.sp_EstudiantesNotasFinalesPorCurso
+--2
+EXEC dbo.sp_HistorialPagosPorEstudiante;
+--3
+EXEC dbo.sp_MateriasProfesoresCursos
+--4
+EXEC dbo.sp_InscripcionesPorCuatrimestreYCurso
+--5
+EXEC dbo.sp_EstudianteConCuotasVencidas
+--6
+EXEC dbo.sp_CursosConCantidadInscriptos
+--7
+EXEC dbo.sp_FacturasAgrupadasPorEstado
+--8
+EXEC dbo.sp_InteresesPorMora
+--9
+EXEC dbo.sp_TopCursosPorInscripciones
+--10
+EXEC dbo.sp_EstudiantesSinMatriculaActual
 
 -- PROCEDIMIENTOS ALMACENADOS (SQL Dinámico) 
 --1.
