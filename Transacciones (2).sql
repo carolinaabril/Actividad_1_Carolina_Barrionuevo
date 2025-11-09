@@ -115,7 +115,7 @@ GO
 -- 3) Registrar pago de cuota y actualizar factura y CC
 CREATE OR ALTER PROCEDURE registrarPago_TX
   @id_estudiante INT,
-  @monto DECIMAL(12,2),
+  @monto DECIMAL(10,2),
   @fecha DATE = NULL
 AS
 BEGIN
@@ -127,8 +127,8 @@ BEGIN
 
     BEGIN TRAN;
 
-    DECLARE @resto DECIMAL(12,2) = @monto;
-    DECLARE @id_cuota INT, @monto_cuota DECIMAL(12,2), @id_fact INT;
+    DECLARE @resto DECIMAL(10,2) = @monto;
+    DECLARE @id_cuota INT, @monto_cuota DECIMAL(10,2), @id_fact INT;
 
     DECLARE cur CURSOR FOR
       SELECT c.id_cuota, c.monto, c.id_factura
@@ -166,7 +166,7 @@ BEGIN
     /* Pagar intereses por mora pendientes si sobró dinero */
     IF @resto > 0
     BEGIN
-      DECLARE @id_mov INT, @monto_mov DECIMAL(12,2);
+      DECLARE @id_mov INT, @monto_mov DECIMAL(10,2);
       DECLARE cur2 CURSOR FOR
         SELECT id_movimiento, monto
         FROM CUENTACORRIENTE
@@ -403,7 +403,7 @@ BEGIN
     GROUP BY c.id_estudiante, e.anio_ingreso
     HAVING COUNT(*) > 1;
 
-    DECLARE @id_est INT, @deuda DECIMAL(18,2), @anio_carr INT, @porc DECIMAL(5,2), @interes DECIMAL(18,2);
+    DECLARE @id_est INT, @deuda DECIMAL(10,2), @anio_carr INT, @porc DECIMAL(5,2), @interes DECIMAL(10,2);
     DECLARE cur CURSOR FOR SELECT id_estudiante,deuda,anio_carrera FROM @tmp;
     OPEN cur; FETCH NEXT FROM cur INTO @id_est,@deuda,@anio_carr;
     WHILE @@FETCH_STATUS = 0
@@ -462,7 +462,7 @@ BEGIN
     BEGIN TRY
       BEGIN TRAN;
 
-      DECLARE @monto_total DECIMAL(12,2) =
+      DECLARE @monto_total DECIMAL(10,2) =
         (SELECT ISNULL(SUM(c.monto),0)
          FROM CUOTA c JOIN FACTURA f ON f.id_factura=c.id_factura
          WHERE c.id_estudiante=@id_est AND c.mes=@mes AND f.anio=@anio AND c.id_estado_pago IN (1,3));
@@ -603,6 +603,5 @@ BEGIN
   END CATCH
 END
 GO
-
 
 
