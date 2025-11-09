@@ -15,6 +15,7 @@ ADD anio_ingreso INT NULL;
 --agregamos estados (A=ACTIVO, B=DADO DE BAJA)
 ALTER TABLE ESTUDIANTES
 ADD estado char(1) null default'A'
+
 ALTER TABLE ESTUDIANTES
 ADD constraint chk_estado_alumno CHECK (estado in ('A','B'));
 
@@ -76,7 +77,13 @@ GO
 ALTER TABLE INSCRIPCIONES
 ADD CONSTRAINT chk_nota_teorica_1 CHECK (nota_teorica_1 BETWEEN 1 AND 10);
 GO
+----------------------------
+ALTER TABLE INSCRIPCIONES
+alter column nota_teorica_1 decimal(4,2) null;
 
+ALTER TABLE INSCRIPCIONES
+alter column nota_practica decimal(4,2) null;
+-------------------------
 ALTER TABLE INSCRIPCIONES
 ADD nota_teorica_2 decimal(4,2) null,
 constraint chk_nota_teorica_2 check (nota_teorica_2 between 1 and 10);

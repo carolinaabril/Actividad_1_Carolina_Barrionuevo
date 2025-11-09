@@ -273,3 +273,9 @@ where id_curso in (909,906,9003)
 
 ALTER TABLE MATERIAS
 DROP COLUMN costo_curso_mensual
+
+
+
+-- DAR de alta alumnos 
+update ESTUDIANTES
+set estado = 'A'
