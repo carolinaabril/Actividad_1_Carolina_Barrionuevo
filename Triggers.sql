@@ -87,62 +87,28 @@ END
 GO
 
 /* 5) Validar inscripción (alumno activo + materia/cuatri) */
-CREATE OR ALTER TRIGGER trg_Inscripciones_Validar_TP
+CREATE OR ALTER TRIGGER trg_Inscripcion_Duplicada
 ON INSCRIPCIONES
-INSTEAD OF INSERT
+AFTER INSERT
 AS
 BEGIN
-  SET NOCOUNT ON;
-
- 
-  IF EXISTS (
-    SELECT 1
-    FROM inserted ins
-    JOIN ESTUDIANTES e ON e.id_estudiante = ins.id_estudiante
-    WHERE e.estado <> 'A'
-  )
-  BEGIN
-    RAISERROR('El estudiante está de baja. No puede inscribirse.', 16, 1);
-    RETURN;
-  END
-
-  IF EXISTS (
-    SELECT 1
-    FROM inserted ins
-    JOIN CURSOS c_new ON c_new.id_curso = ins.id_curso
-    JOIN INSCRIPCIONES i_old ON i_old.id_estudiante = ins.id_estudiante
-    JOIN CURSOS c_old ON c_old.id_curso = i_old.id_curso
-    WHERE c_new.id_materia = c_old.id_materia
-      AND ISNULL(c_new.id_cuatrimestre, -1) = ISNULL(c_old.id_cuatrimestre, -1)
-  )
-  BEGIN
-    RAISERROR('Ya está inscripto a una cursada de la misma materia en el mismo cuatrimestre.', 16, 1);
-    RETURN;
-  END
-
-  
-  IF EXISTS (
-    SELECT 1
-    FROM inserted ins
-    JOIN INSCRIPCIONES i ON i.id_estudiante = ins.id_estudiante AND i.id_curso = ins.id_curso
-  )
-  BEGIN
-    RAISERROR('Ya existe una inscripción para ese estudiante y curso.', 16, 1);
-    RETURN;
-  END
-
-
-  INSERT INTO INSCRIPCIONES (
-    id_estudiante, id_curso, fecha_inscripcion,
-    nota_teorica_1, nota_teorica_2, nota_practica,
-    nota_teorica_recuperatorio, nota_final
-  )
-  SELECT
-    id_estudiante, id_curso, fecha_inscripcion,
-    nota_teorica_1, nota_teorica_2, nota_practica,
-    nota_teorica_recuperatorio, nota_final
-  FROM inserted;
-END
+   
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i, CURSOS c_new, INSCRIPCIONES ins_old, CURSOS c_old
+        WHERE c_new.id_curso = i.id_curso
+          AND ins_old.id_estudiante = i.id_estudiante
+          AND c_old.id_curso = ins_old.id_curso
+          AND c_new.id_materia = c_old.id_materia
+          AND ISNULL(c_new.id_cuatrimestre, -1) = ISNULL(c_old.id_cuatrimestre, -1)
+          AND ins_old.id_curso <> i.id_curso
+    )
+    BEGIN
+        RAISERROR('Ya está inscripto a una cursada de la misma materia en el mismo cuatrimestre.', 16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END
+END;
 GO
 
 /* 6) Todas las CUOTAS pagas -> FACTURA paga */
@@ -187,11 +153,7 @@ BEGIN
 END
 GO
 
-
-
-
--- 8) Trigger para impedir 
---la inscripción si el estudiante está dado de baja
+-- 8) Trigger para impedir la inscripción si el estudiante está dado de baja
 
 CREATE TRIGGER impedirInscripcion
 ON INSCRIPCIONES
@@ -215,25 +177,24 @@ GO
 
 --9 Trigger para actualizar el monto total de la factura al insertar un ítem de factura.
 
-CREATE TRIGGER actualizarMontoFactura
+CREATE OR ALTER TRIGGER actualizarMontoFactura
 ON itemFactura
-AFTER insert
+AFTER INSERT
 AS
 BEGIN
+    SET NOCOUNT ON;
 
-    DECLARE @id_factura INT;
-    SELECT @id_factura = id_factura FROM inserted;
-    
-    UPDATE factura
-    SET monto_total = (
+    UPDATE f
+    SET f.monto_total = (
         SELECT SUM(c.costo_mensual)
         FROM itemFactura i, cursos c
         WHERE i.id_curso = c.id_curso
-          AND i.id_factura = @id_factura
+          AND i.id_factura = f.id_factura
     )
-    WHERE id_factura = @id_factura;
+    FROM factura f, inserted ins
+    WHERE f.id_factura = ins.id_factura;
 END;
-
+GO
 
 
 /* 10) CUOTA -> pasa a VENCIDA -> interés por mora (simple) */
