@@ -94,27 +94,53 @@ AS
 BEGIN
   SET NOCOUNT ON;
 
+ 
   IF EXISTS (
     SELECT 1
     FROM inserted ins
-    JOIN ESTUDIANTES e ON e.id_estudiante=ins.id_estudiante
-    WHERE e.estado<>'A'
+    JOIN ESTUDIANTES e ON e.id_estudiante = ins.id_estudiante
+    WHERE e.estado <> 'A'
   )
-  BEGIN RAISERROR('El estudiante está de baja. No puede inscribirse.',16,1); RETURN; END
+  BEGIN
+    RAISERROR('El estudiante está de baja. No puede inscribirse.', 16, 1);
+    RETURN;
+  END
 
   IF EXISTS (
     SELECT 1
     FROM inserted ins
-    JOIN CURSOS c_new ON c_new.id_curso=ins.id_curso
-    JOIN INSCRIPCIONES i_old ON i_old.id_estudiante=ins.id_estudiante
-    JOIN CURSOS c_old ON c_old.id_curso=i_old.id_curso
-    WHERE c_new.id_materia=c_old.id_materia
-      AND ISNULL(c_new.id_cuatrimestre,-1)=ISNULL(c_old.id_cuatrimestre,-1)
+    JOIN CURSOS c_new ON c_new.id_curso = ins.id_curso
+    JOIN INSCRIPCIONES i_old ON i_old.id_estudiante = ins.id_estudiante
+    JOIN CURSOS c_old ON c_old.id_curso = i_old.id_curso
+    WHERE c_new.id_materia = c_old.id_materia
+      AND ISNULL(c_new.id_cuatrimestre, -1) = ISNULL(c_old.id_cuatrimestre, -1)
   )
-  BEGIN RAISERROR('Ya está inscripto a una cursada de la misma materia en el mismo cuatrimestre.',16,1); RETURN; END
+  BEGIN
+    RAISERROR('Ya está inscripto a una cursada de la misma materia en el mismo cuatrimestre.', 16, 1);
+    RETURN;
+  END
 
-  INSERT INTO INSCRIPCIONES(id_estudiante,id_curso,fecha_inscripcion,nota_teorica_1,nota_teorica_2,nota_practica,nota_teorica_recuperatorio,nota_final)
-  SELECT id_estudiante,id_curso,fecha_inscripcion,nota_teorica_1,nota_teorica_2,nota_practica,nota_teorica_recuperatorio,nota_final
+  
+  IF EXISTS (
+    SELECT 1
+    FROM inserted ins
+    JOIN INSCRIPCIONES i ON i.id_estudiante = ins.id_estudiante AND i.id_curso = ins.id_curso
+  )
+  BEGIN
+    RAISERROR('Ya existe una inscripción para ese estudiante y curso.', 16, 1);
+    RETURN;
+  END
+
+
+  INSERT INTO INSCRIPCIONES (
+    id_estudiante, id_curso, fecha_inscripcion,
+    nota_teorica_1, nota_teorica_2, nota_practica,
+    nota_teorica_recuperatorio, nota_final
+  )
+  SELECT
+    id_estudiante, id_curso, fecha_inscripcion,
+    nota_teorica_1, nota_teorica_2, nota_practica,
+    nota_teorica_recuperatorio, nota_final
   FROM inserted;
 END
 GO
@@ -169,34 +195,23 @@ GO
 
 CREATE TRIGGER impedirInscripcion
 ON INSCRIPCIONES
-AFTER INSERT 
-
+AFTER INSERT
 AS
 BEGIN
-    IF exists(SELECT *
-    from inserted i, estudiantes e
-    where e.id_estudiante = i.id_estudiante and e.estado = 'B')
-
+    -- Verificamos si algún estudiante insertado está dado de baja
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        JOIN ESTUDIANTES e ON e.id_estudiante = i.id_estudiante
+        WHERE e.estado = 'B'
+    )
     BEGIN
         RAISERROR('No se puede inscribir: el estudiante está dado de baja.', 16, 1);
+        ROLLBACK TRAN; -- Cancelamos el INSERT original
         RETURN;
     END
-
-     INSERT INTO INSCRIPCIONES (id_estudiante,id_curso, fecha_inscripcion, nota_teorica_1, nota_teorica_2,nota_practica,nota_teorica_recuperatorio,nota_final)
-  SELECT
-    id_estudiante,
-    id_curso,
-    fecha_inscripcion,
-    nota_teorica_1,
-    nota_teorica_2,
-    nota_practica,
-    nota_teorica_recuperatorio,
-    nota_final
-  FROM inserted;
-
 END
 GO
-
 
 --9 Trigger para actualizar el monto total de la factura al insertar un ítem de factura.
 
