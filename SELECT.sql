@@ -221,7 +221,64 @@ exec ListadoEstudiantesFiltros
 
 
 --TRIGGERS
+--1. Pago de cuota
+insert into cuota (id_cuota, id_estudiante, id_cuatrimestre, id_factura, mes, monto, fecha_vencimiento, id_estado_pago) values 
 
+(5, 600, 2, 8,11, 10000, '2026-01-10', 1),
+(6, 600, 2, 8,11, 10000, '2026-01-10', 2)
+
+insert into CUENTACORRIENTE (id_movimiento, id_estudiante, fecha, concepto, monto, id_estado_pago) values
+(13,600,'2025-11-11', 'Cuota Noviembre', 10000, 2)
+
+select * from cuota where id_cuota=5
+select * from factura where id_factura=8
+
+--2. Recalcular nota final inscripcion 
+exec cargaAlumnos 
+	@id = 1500,
+	@nombre = 'Joaquin',
+	@apellido = 'Herrero',
+	@email = 'joaquin@example.com', 
+	@anio_ingreso = 2025;
+
+
+insert into INSCRIPCIONES (id_estudiante, id_curso, fecha_inscripcion, nota_teorica_1, nota_practica, nota_teorica_2, nota_teorica_recuperatorio) values
+(1500, 906, '2025-11-11', 7.5,8,9, null)
+
+update INSCRIPCIONES 
+set nota_teorica_recuperatorio = 7
+where id_estudiante=1500 and id_curso=906;
+
+SELECT nota_final FROM INSCRIPCIONES WHERE id_estudiante = 1500 AND id_curso = 906;
+
+--3. Dar de baja Inscripcion
+SELECT * FROM ESTUDIANTES WHERE id_estudiante = 1400;
+
+delete from INSCRIPCIONES where id_estudiante = 1400 and id_curso=906;
+
+select estado from ESTUDIANTES where id_estudiante= 1400;
+
+--4. Movimiento de factura 
+insert into factura (id_factura, id_estudiante, mes, anio, fecha_emision, fecha_vencimiento, monto_total, id_estado_pago) 
+values (10, 600, 8, 2025, '2025-08-10', '2025-09-10', 12000, 2 )
+
+select * from CUENTACORRIENTE where concepto = 'Factura #10'; 
+
+--5. Validar Inscripciones 
+insert into INSCRIPCIONES (id_estudiante, id_curso, fecha_inscripcion, nota_teorica_1, nota_practica, nota_teorica_2, nota_teorica_recuperatorio) 
+values (1500, 906, GETDATE(), 8, 9, 9, null)
+
+-- id_ estudiante = 1400 ya esta dado de baja
+insert into INSCRIPCIONES (id_estudiante, id_curso, fecha_inscripcion, nota_teorica_1, nota_practica, nota_teorica_2, nota_teorica_recuperatorio) 
+values (1400, 906, GETDATE(), 8, 9, 9, null)  -- El estudiante esta de baja. No puede inscribirse
+
+
+--
+--6. 
+--7. 
+--8. 
+--9. 
+--10. 
 
 --TRANSACCIONES DESDE PROCEDIMIENTOS ALMACENADOS
 
